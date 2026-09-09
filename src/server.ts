@@ -6,6 +6,9 @@ import express, { type Express, type Request, type Response } from 'express';
 import { Pool } from "pg";
 
 const app: Express = express();
+
+app.use(express.json());
+
 const port: number = parseInt(process.env.PORT || '5000', 10);
 // Database
 const pool = new Pool({
@@ -52,13 +55,21 @@ app.get('/', (req: Request, res: Response) => {
     res.send('Hello World! This is shifat');
 });
 
-app.post('/', (req: Request, res: Response) => {
-    console.log(req);
+app.post('/users', async (req: Request, res: Response) => {
+    const { name, email } = req.body;
 
-    res.status(201).json({
-        success: true,
-        message: "API is working"
-    })
+    try {
+        const result = await pool.query(`INSERT INTO users(name, email) VALUES($1, $2) RETURNING *`, [name, email]);
+        console.log(result)
+        res.send({ message: "shifat tomar data Inserted" })
+    }
+    catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        })
+    }
+
 })
 
 app.listen(port, () => {
