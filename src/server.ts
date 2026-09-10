@@ -67,6 +67,9 @@ initDB();
 // to delete all Databse
 // resetDB();
 
+// pushing code into branch shifat
+// pushing code into branch dev
+
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello World! This is shifat');
 });
@@ -110,6 +113,50 @@ app.post('/users', async (req: Request, res: Response) => {
     }
 });
 
+app.get('/users', async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query(`SELECT * FROM users`);
+
+        res.status(200).json({
+            success: true,
+            message: "Users retrived successfully!",
+            data: result.rows,
+        })
+    }
+    catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+            details: err
+        })
+    }
+})
+
+app.get('/users/:id', async (req: Request, res: Response) => {
+    try {
+        const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.params.id])
+
+        if (result?.rows?.length === 0) {
+            res.status(404).json({
+                success: false,
+                message: "user not found!"
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "Users fetched successfully!",
+                data: result?.rows[0],
+            })
+        }
+
+        console.log(result.rows)
+    } catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+        })
+    }
+})
 
 
 app.listen(port, () => {
