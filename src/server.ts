@@ -49,28 +49,68 @@ const initDB = async () => {
     }
 };
 
+const resetDB = async () => {
+    try {
+        await pool.query(`
+            TRUNCATE TABLE users, todos
+            RESTART IDENTITY CASCADE
+        `);
+
+        console.log("Database reset successfully!");
+    } catch (error) {
+        console.error("Database reset failed:", error);
+    }
+};
+
 initDB();
+
+// to delete all Databse
+// resetDB();
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello World! This is shifat');
 });
 
 app.post('/users', async (req: Request, res: Response) => {
-    const { name, email } = req.body;
+    const { name, email, age, phone, address } = req.body;
 
     try {
-        const result = await pool.query(`INSERT INTO users(name, email) VALUES($1, $2) RETURNING *`, [name, email]);
-        console.log(result)
-        res.send({ message: "shifat tomar data Inserted" })
-    }
-    catch (err: any) {
+        // 1. Check if email already exists
+        const existingUser = await pool.query(
+            `SELECT id FROM users WHERE email = $1`,
+            [email]
+        );
+
+        if (existingUser.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Email already exists!"
+            });
+        }
+
+        // 2. Insert only if email does not exist
+        const result = await pool.query(
+            `INSERT INTO users(name, email, age, phone, address)
+              VALUES($1, $2, $3, $4, $5)
+             RETURNING *`,
+            [name, email, age, phone, address]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "User created successfully!",
+            data: result.rows[0]
+        });
+
+    } catch (err: any) {
         res.status(500).json({
             success: false,
             message: err.message
-        })
+        });
     }
+});
 
-})
+
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
