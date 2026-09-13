@@ -134,6 +134,34 @@ app.get('/users', async (req: Request, res: Response) => {
 
 app.get('/users/:id', async (req: Request, res: Response) => {
     try {
+        const { name, email } = req.body;
+
+        const result = await pool.query(`UPDATE users SET name=$1, email=$2 WHERE id=$3 RETURNING *`, [name, email, req?.params?.id])
+
+        if (result?.rows?.length === 0) {
+            res.status(404).json({
+                success: false,
+                message: "user not found!"
+            })
+        } else {
+            res.status(200).json({
+                success: true,
+                message: "Users updated successfully!",
+                data: result?.rows[0],
+            })
+        }
+
+        console.log(result.rows)
+    } catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: err.message,
+        })
+    }
+})
+
+app.put('/users/:id', async (req: Request, res: Response) => {
+    try {
         const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.params.id])
 
         if (result?.rows?.length === 0) {
